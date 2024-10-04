@@ -1,0 +1,79 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      - run: |
+              NGINX_VERSION=1.27.2
+              apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --no-install-suggests -y \
+                gnupg1  \
+                ca-certificates  \
+                cmake \
+                gcc \
+                libc-dev \
+                make \
+                openssl \
+                libssl-dev \
+                curl \
+                gnupg \                        
+                wget \                         
+                git \
+                libxml2 \
+                libpcre3 libpcre3-dev \        
+                libghc-zlib-dev && \
+                apt clean && rm -r /var/lib/apt/lists
+              mkdir -p /usr/src/modules
+              cd /usr/src/modules
+              git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli.git
+              # prebuild brotli
+              cd /usr/src/modules/ngx_brotli/deps/brotli && mkdir out && cd out && \
+                  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./installed .. && \
+                  cmake --build . --config Release --target brotlienc
+
+              git clone https://github.com/FRiCKLE/ngx_cache_purge
+              git clone https://github.com/aperezdc/ngx-fancyindex.git
+              git clone https://github.com/sergey-dryabzhinsky/nginx-rtmp-module
+              git clone https://github.com/vozlt/nginx-module-vts
+
+              wget "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" -O /tmp/nginx.tar.gz
+              CONFARGS=$(nginx -V 2>&1 | sed -n -e 's/^.*arguments: //p') \
+                      tar -zxC /usr/src -f /tmp/nginx.tar.gz && \
+              cd /usr/src/nginx-$NGINX_VERSION && \
+              ./configure --with-compat $CONFARGS \
+                    --add-dynamic-module=/usr/src/modules/ngx_brotli \
+                    --add-dynamic-module=/usr/src/modules/ngx_cache_purge \
+                    --add-dynamic-module=/usr/src/modules/ngx-fancyindex \
+                    --add-dynamic-module=/usr/src/modules/nginx-module-vts \
+                    --add-dynamic-module=/usr/src/modules/nginx-rtmp-module && \
+              make modules -j $(nproc)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nginx-modules
+          path: |
+            /usr/src/nginx-*/objs/*.so
+      #- run: sudo apt-get install -y debhelper
+      #- run: dpkg-buildpackage -A -rfakeroot -us -uc -d
+      #- run: make source-package
