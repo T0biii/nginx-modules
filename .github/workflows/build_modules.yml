@@ -32,7 +32,7 @@ jobs:
       - run: |
           export NGINX_VERSION=1.27.2
           DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends --no-install-suggests -y \
-            gnupg1 nginx=$NGINX_VERSION \
+            gnupg1 nginx \
             ca-certificates  \
             cmake \
             gcc \
