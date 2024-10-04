@@ -24,13 +24,15 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
-      - run: |
+      - name: Install nginx source
+        run: |
           source /etc/os-release
           curl https://nginx.org/keys/nginx_signing.key | sudo gpg --dearmor -o /etc/apt/keyrings/nginx-archive-keyring.gpg
           echo "deb [signed-by=/etc/apt/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/$ID $VERSION_CODENAME nginx" | sudo tee -a /etc/apt/sources.list.d/nginx.list
           sudo apt update
-      - run: |
-          export NGINX_VERSION=1.27.2
+      - name: Setup dependencies
+        shell: bash
+        run: |
           DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends --no-install-suggests -y \
             gnupg1 nginx \
             ca-certificates  \
@@ -48,6 +50,8 @@ jobs:
             libpcre3 libpcre3-dev \        
             libghc-zlib-dev && \
             apt clean && rm -r /var/lib/apt/lists
+      - name: Pull modules
+        run: |
           mkdir -p modules
           pushd modules
           git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli.git
@@ -64,7 +68,9 @@ jobs:
           
           # exit modules
           popd
-
+      - name: Build modules
+        run: |
+          export NGINX_VERSION=1.27.2
           wget "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" -O /tmp/nginx.tar.gz
           CONFARGS=$(nginx -V 2>&1 | sed -n -e 's/^.*arguments: //p') \
                   tar -zxC . -f /tmp/nginx.tar.gz && \
