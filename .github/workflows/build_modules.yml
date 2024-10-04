@@ -26,12 +26,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           source /etc/os-release
-          curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /etc/apt/keyrings/nginx-archive-keyring.gpg
-          echo "deb [signed-by=/etc/apt/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/$ID $VERSION_CODENAME nginx" > /etc/apt/sources.list.d/nginx.list
-          apt update
+          curl https://nginx.org/keys/nginx_signing.key | sudo gpg --dearmor -o /etc/apt/keyrings/nginx-archive-keyring.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/$ID $VERSION_CODENAME nginx" | sudo tee -a /etc/apt/sources.list.d/nginx.list
+          sudo apt update
       - run: |
           export NGINX_VERSION=1.27.2
-          apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --no-install-suggests -y \
+          sudo apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --no-install-suggests -y \
             gnupg1 nginx=$NGINX_VERSION \
             ca-certificates  \
             cmake \
