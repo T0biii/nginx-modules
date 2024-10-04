@@ -32,22 +32,8 @@ jobs:
           sudo apt update
       - name: Setup dependencies
         run: |
-          DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends --no-install-suggests -y nginx \
-            gnupg1 \
-            ca-certificates  \
-            cmake \
-            gcc \
-            libc-dev \
-            make \
-            openssl \
-            libssl-dev \
-            curl \
-            gnupg \                        
-            wget \                         
-            git \
-            libxml2 \
-            libpcre3 libpcre3-dev \        
-            libghc-zlib-dev
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get install --no-install-recommends --no-install-suggests -y nginx gnupg1 ca-certificates cmake gcc libc-dev make openssl libssl-dev curl gnupg wget git libxml2 libpcre3 libpcre3-dev libghc-zlib-dev
       - name: Pull modules
         run: |
           mkdir -p modules
