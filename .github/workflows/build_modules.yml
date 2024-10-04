@@ -31,10 +31,9 @@ jobs:
           echo "deb [signed-by=/etc/apt/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/$ID $VERSION_CODENAME nginx" | sudo tee -a /etc/apt/sources.list.d/nginx.list
           sudo apt update
       - name: Setup dependencies
-        shell: bash
         run: |
-          DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends --no-install-suggests -y \
-            gnupg1 nginx \
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends --no-install-suggests -y nginx \
+            gnupg1 \
             ca-certificates  \
             cmake \
             gcc \
@@ -48,8 +47,7 @@ jobs:
             git \
             libxml2 \
             libpcre3 libpcre3-dev \        
-            libghc-zlib-dev && \
-            apt clean && rm -r /var/lib/apt/lists
+            libghc-zlib-dev
       - name: Pull modules
         run: |
           mkdir -p modules
