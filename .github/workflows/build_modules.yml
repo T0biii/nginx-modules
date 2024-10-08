@@ -7,11 +7,19 @@ on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
+    tags:
+      - "*.*.*" # as used in script later this must not be prefixed by v
   pull_request:
     branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NGINX_VERSION: 1.27.2
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -49,12 +57,16 @@ jobs:
           git clone https://github.com/aperezdc/ngx-fancyindex.git
           git clone https://github.com/sergey-dryabzhinsky/nginx-rtmp-module
           git clone https://github.com/vozlt/nginx-module-vts
-          
+
           # exit modules
           popd
+
+      - name: Set nginx version to tag name
+        if: startsWith(github.ref, 'refs/tags/')
+        run: echo "NGINX_VERSION=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+
       - name: Build modules
         run: |
-          export NGINX_VERSION=1.27.2
           wget "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" -O /tmp/nginx.tar.gz
           CONFARGS=$(nginx -V 2>&1 | sed -n -e 's/^.*arguments: //p') \
                   tar -zxC . -f /tmp/nginx.tar.gz && \
@@ -72,6 +84,14 @@ jobs:
           name: nginx-modules
           path: |
             nginx-*/objs/*.so
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            nginx-*/objs/*.so
+
       #- run: sudo apt-get install -y debhelper
       #- run: dpkg-buildpackage -A -rfakeroot -us -uc -d
       #- run: make source-package
